@@ -150,11 +150,8 @@
       const jsonStr = atob(decodeURIComponent(encodedData));
       receiptData = JSON.parse(jsonStr);
       
-      // Tampilkan preview
       document.getElementById('storeName').textContent = receiptData.store_name || 'Toko';
       document.getElementById('preview').textContent = generatePreview(receiptData);
-      
-      // Generate ESC/POS bytes
       escposBytes = generateESCOS(receiptData);
       
       document.getElementById('status').innerHTML = 
@@ -186,14 +183,11 @@
     }
     
     function generateESCOS(data) {
-      // Build ESC/POS commands
       const encoder = new TextEncoder();
       const parts = [];
       
-      // Init
       parts.push(new Uint8Array([0x1B, 0x40])); // ESC @
       
-      // Center align, double size for store name
       parts.push(new Uint8Array([0x1B, 0x61, 1])); // align center
       parts.push(new Uint8Array([0x1D, 0x21, 0x11])); // double h/w
       parts.push(encoder.encode(data.store_name + '\n'));
@@ -203,15 +197,12 @@
       parts.push(new Uint8Array([0x1B, 0x4D, 0])); // normal font
       parts.push(encoder.encode(data.date + '\n'));
       
-      // Divider
       parts.push(encoder.encode('─'.repeat(32) + '\n'));
       
-      // Items header
       parts.push(new Uint8Array([0x1B, 0x61, 0])); // align left
       parts.push(encoder.encode('Item          Qty   Subtotal\n'));
       parts.push(encoder.encode('─'.repeat(32) + '\n'));
       
-      // Items
       data.items.forEach(item => {
         const name = item.name.substring(0, 15).padEnd(15);
         const qty = String(item.qty).padStart(4);
@@ -219,23 +210,19 @@
         parts.push(encoder.encode(`${name} ${qty} ${subtotal}\n`));
       });
       
-      // Total
       parts.push(encoder.encode('─'.repeat(32) + '\n'));
       parts.push(new Uint8Array([0x1B, 0x61, 2])); // align right
       parts.push(new Uint8Array([0x1D, 0x21, 0x11])); // double
       parts.push(encoder.encode('TOTAL\n'));
       parts.push(encoder.encode('Rp ' + data.total.toLocaleString('id-ID') + '\n'));
       
-      // Footer
       parts.push(new Uint8Array([0x1D, 0x21, 0x00])); // normal
       parts.push(new Uint8Array([0x1B, 0x61, 1])); // center
       parts.push(encoder.encode('\n' + data.footer + '\n'));
       parts.push(encoder.encode('\n\n'));
       
-      // Cut
       parts.push(new Uint8Array([0x1D, 0x56, 0x00])); // full cut
       
-      // Concatenate all parts
       const totalLen = parts.reduce((sum, p) => sum + p.length, 0);
       const result = new Uint8Array(totalLen);
       let offset = 0;
@@ -244,6 +231,45 @@
         offset += p.length;
       });
       return result;
+    }
+
+    // Daftar UUID umum untuk printer Bluetooth SPP / serial
+    const COMMON_UUIDS = [
+      '00001101-0000-1000-8000-00805f9b34fb', // SPP
+      '00001101-0000-1000-8000-00805f9b34fa', // SPP alternate
+      '00000000-0000-1000-8000-00805f9b34fb', // Generic
+      'e7810a71-73ae-499d-8c15-faa9aef0c3f2', // Custom (sering dipakai)
+      '49535343-FE7D-4AE5-8FA9-9FAFD205E455', // Serial
+      '00001800-0000-1000-8000-00805f9b34fb', // Generic Access
+      '0000180a-0000-1000-8000-00805f9b34fb'  // Device Information
+    ];
+
+    async function findWritableCharacteristic(server) {
+      // Coba semua UUID yang diizinkan di optionalServices
+      for (const uuid of COMMON_UUIDS) {
+        try {
+          const service = await server.getPrimaryService(uuid);
+          const chars = await service.getCharacteristics();
+          for (const char of chars) {
+            if (char.properties.write || char.properties.writeWithoutResponse) {
+              return char;
+            }
+          }
+        } catch (e) {
+          // UUID ini tidak ada, lanjut
+        }
+      }
+      // Jika tidak ada yang cocok, coba kumpulkan semua service
+      const services = await server.getPrimaryServices();
+      for (const service of services) {
+        const chars = await service.getCharacteristics();
+        for (const char of chars) {
+          if (char.properties.write || char.properties.writeWithoutResponse) {
+            return char;
+          }
+        }
+      }
+      throw new Error('Tidak ada karakteristik yang bisa ditulis. Printer mungkin tidak mendukung komunikasi serial.');
     }
     
     async function printViaBluetooth() {
@@ -264,16 +290,19 @@
           throw new Error('Web Bluetooth tidak didukung. Gunakan Chrome/Edge.');
         }
         
+        // Izinkan semua perangkat dan sertakan UUID yang mungkin
         const device = await navigator.bluetooth.requestDevice({
           acceptAllDevices: true,
-          optionalServices: ['00001101-0000-1000-8000-00805f9b34fb']
+          optionalServices: COMMON_UUIDS
         });
         
         status.innerHTML = `<span class="info">Terhubung ke: ${device.name || 'Printer'}</span>`;
         
         const server = await device.gatt.connect();
-        const service = await server.getPrimaryService('00001101-0000-1000-8000-00805f9b34fb');
-        const characteristic = await service.getCharacteristic('00001101-0000-1000-8000-00805f9b34fb');
+        
+        status.innerHTML = '<span class="info">Mencari layanan komunikasi...</span>';
+        
+        const characteristic = await findWritableCharacteristic(server);
         
         status.innerHTML = '<span class="info">Mengirim data...</span>';
         
@@ -281,7 +310,11 @@
         const CHUNK = 512;
         for (let i = 0; i < escposBytes.length; i += CHUNK) {
           const chunk = escposBytes.slice(i, i + CHUNK);
-          await characteristic.writeValueWithoutResponse(chunk);
+          if (characteristic.properties.writeWithoutResponse) {
+            await characteristic.writeValueWithoutResponse(chunk);
+          } else {
+            await characteristic.writeValue(chunk);
+          }
         }
         
         status.innerHTML = '<span class="success">Struk berhasil dicetak!</span>';
