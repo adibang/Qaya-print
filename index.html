@@ -197,11 +197,11 @@
       cmd = cmd.concat(Array.from(encoder.encode(data.date + '\n')));
 
       // Divider
-      cmd = cmd.concat(Array.from(encoder.encode('─'.repeat(32) + '\n')));
+      cmd = cmd.concat(Array.from(encoder.encode('-'.repeat(32) + '\n')));
 
       // Header kolom
       cmd = cmd.concat(Array.from(encoder.encode('Item          Qty   Subtotal\n')));
-      cmd = cmd.concat(Array.from(encoder.encode('─'.repeat(32) + '\n')));
+      cmd = cmd.concat(Array.from(encoder.encode('-'.repeat(32) + '\n')));
 
       // Items
       if (data.items) {
