@@ -194,74 +194,72 @@
     }
     
     function buildESCOSCommands(data) {
-      const encoder = new TextEncoder();
-      let cmd = [];
-      
-      // Init printer
-      cmd.push(0x1B, 0x40); // ESC @
-      
-      // Center align, double size untuk nama toko
-      cmd.push(0x1B, 0x61, 0x01); // ESC a 1 (center)
-      cmd.push(0x1D, 0x21, 0x11); // GS ! 17 (double height & width)
-      const storeName = encoder.encode((data.store_name || 'Toko') + '\n');
-      cmd = cmd.concat(Array.from(storeName));
-      
-      // Normal font, small
-      cmd.push(0x1D, 0x21, 0x00); // GS ! 0 (normal)
-      cmd.push(0x1B, 0x4D, 0x01); // ESC M 1 (small font)
-      const storeAddr = encoder.encode((data.store_address || '') + '\n');
-      cmd = cmd.concat(Array.from(storeAddr));
-      
-      // Normal font
-      cmd.push(0x1B, 0x4D, 0x00); // ESC M 0 (normal)
-      const date = encoder.encode((data.date || '') + '\n');
-      cmd = cmd.concat(Array.from(date));
-      
-      // Divider
-      const divider = encoder.encode('─'.repeat(32) + '\n');
-      cmd = cmd.concat(Array.from(divider));
-      
-      // Header items
-      cmd.push(0x1B, 0x61, 0x00); // ESC a 0 (left)
-      const header = encoder.encode('Item          Qty   Subtotal\n');
-      cmd = cmd.concat(Array.from(header));
-      const divider2 = encoder.encode('─'.repeat(32) + '\n');
-      cmd = cmd.concat(Array.from(divider2));
-      
-      // Items
-      if (data.items) {
-        data.items.forEach(item => {
-          const name = (item.name || '').substring(0, 15).padEnd(15);
-          const qty = String(item.qty || 1).padStart(4);
-          const subtotal = 'Rp ' + (item.subtotal || 0).toLocaleString('id-ID');
-          const line = encoder.encode(name + ' ' + qty + ' ' + subtotal.padStart(10) + '\n');
-          cmd = cmd.concat(Array.from(line));
-        });
-      }
-      
-      // Total
-      const divider3 = encoder.encode('─'.repeat(32) + '\n');
-      cmd = cmd.concat(Array.from(divider3));
-      cmd.push(0x1B, 0x61, 0x02); // ESC a 2 (right)
-      cmd.push(0x1D, 0x21, 0x11); // double
-      const totalLine = encoder.encode('TOTAL\n');
-      cmd = cmd.concat(Array.from(totalLine));
-      const totalValue = encoder.encode('Rp ' + (data.total || 0).toLocaleString('id-ID') + '\n');
-      cmd = cmd.concat(Array.from(totalValue));
-      
-      // Footer
-      cmd.push(0x1D, 0x21, 0x00); // normal
-      cmd.push(0x1B, 0x61, 0x01); // center
-      cmd.push(0x0A); // feed
-      const footer = encoder.encode((data.footer || 'Terima kasih telah berbelanja') + '\n');
-      cmd = cmd.concat(Array.from(footer));
-      cmd.push(0x0A, 0x0A); // feed 2 lines
-      
-      // Cut paper
-      cmd.push(0x1D, 0x56, 0x41, 0x00); // GS V A 0 (partial cut)
-      
-      return new Uint8Array(cmd);
-    }
+  const encoder = new TextEncoder();
+  let cmd = [];
+
+  // Init printer - reset
+  cmd.push(0x1B, 0x40); // ESC @
+
+  // Center align untuk header
+  cmd.push(0x1B, 0x61, 0x01); // ESC a 1 (center)
+  
+  // Nama toko - bold
+  cmd.push(0x1B, 0x45, 0x01); // ESC E 1 (bold on)
+  const storeName = encoder.encode((data.store_name || 'Toko') + '\n');
+  cmd = cmd.concat(Array.from(storeName));
+  cmd.push(0x1B, 0x45, 0x00); // ESC E 0 (bold off)
+  
+  // Alamat & tanggal (font normal)
+  const storeAddr = encoder.encode((data.store_address || '') + '\n');
+  cmd = cmd.concat(Array.from(storeAddr));
+  const date = encoder.encode((data.date || '') + '\n');
+  cmd = cmd.concat(Array.from(date));
+
+  // Divider - gunakan karakter minus biasa, bukan unicode
+  cmd = cmd.concat(Array.from(encoder.encode('--------------------------------\n'))); // 32 karakter
+
+  // Header kolom (left align)
+  cmd.push(0x1B, 0x61, 0x00); // ESC a 0 (left)
+  const header = encoder.encode('Item          Qty   Subtotal\n');
+  cmd = cmd.concat(Array.from(header));
+  cmd = cmd.concat(Array.from(encoder.encode('--------------------------------\n')));
+
+  // Items
+  if (data.items) {
+    data.items.forEach(item => {
+      // Nama item pendek (15 karakter)
+      const name = (item.name || '').substring(0, 15).padEnd(15, ' ');
+      // Qty dalam 4 karakter
+      const qty = String(item.qty || 1).padStart(4, ' ');
+      // Subtotal
+      const subtotal = 'Rp ' + (item.subtotal || 0).toLocaleString('id-ID');
+      const line = name + ' ' + qty + ' ' + subtotal.padStart(10, ' ') + '\n';
+      cmd = cmd.concat(Array.from(encoder.encode(line)));
+    });
+  }
+
+  // Total
+  cmd = cmd.concat(Array.from(encoder.encode('--------------------------------\n')));
+  cmd.push(0x1B, 0x61, 0x02); // ESC a 2 (right)
+  cmd.push(0x1B, 0x45, 0x01); // bold on
+  const totalLine = encoder.encode('TOTAL\n');
+  cmd = cmd.concat(Array.from(totalLine));
+  const totalValue = encoder.encode('Rp ' + (data.total || 0).toLocaleString('id-ID') + '\n');
+  cmd = cmd.concat(Array.from(totalValue));
+  cmd.push(0x1B, 0x45, 0x00); // bold off
+
+  // Footer
+  cmd.push(0x1B, 0x61, 0x01); // center
+  cmd.push(0x0A); // feed 1 line
+  const footer = encoder.encode((data.footer || 'Terima kasih telah berbelanja') + '\n');
+  cmd = cmd.concat(Array.from(footer));
+  cmd.push(0x0A, 0x0A); // feed 2 lines
+
+  // Cut paper
+  cmd.push(0x1D, 0x56, 0x41, 0x00); // GS V A 0 (partial cut)
+
+  return new Uint8Array(cmd);
+}
     
     // ========== WEB SERIAL API ==========
     let port = null;
