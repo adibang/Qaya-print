@@ -2,396 +2,128 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Qaya Print - Cetak Struk</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qaya Print</title>
   <style>
-    :root {
-      --prime-500: #C7510F;
-      --neutral-50: #FAFAFA;
-      --neutral-100: #F5F5F5;
-      --neutral-200: #E5E5E5;
-      --neutral-500: #737373;
-      --neutral-700: #404040;
-      --radius-md: 8px;
-      --radius-lg: 12px;
-      --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
-      --space-3: 12px;
-      --space-4: 16px;
-      --space-6: 24px;
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--neutral-50);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: var(--space-4);
-    }
-    .card {
-      background: white;
-      border-radius: var(--radius-lg);
-      padding: var(--space-6);
-      box-shadow: var(--shadow-md);
-      max-width: 400px;
-      width: 100%;
-      text-align: center;
-    }
+    :root { --prime-500: #C7510F; --neutral-50: #FAFAFA; --neutral-100: #F5F5F5; --neutral-200: #E5E5E5; --neutral-500: #737373; --neutral-700: #404040; --radius-md: 8px; --radius-lg: 12px; --shadow-md: 0 4px 12px rgba(0,0,0,0.08); --space-3: 12px; --space-4: 16px; --space-6: 24px; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: -apple-system, sans-serif; background: var(--neutral-50); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: var(--space-4); }
+    .card { background: white; border-radius: var(--radius-lg); padding: var(--space-6); box-shadow: var(--shadow-md); max-width: 400px; width:100%; text-align: center; }
     h1 { color: var(--prime-500); font-size: 1.8rem; margin-bottom: var(--space-2); }
-    .store-name { font-weight: 600; color: var(--neutral-700); margin-bottom: var(--space-4); }
-    .preview {
-      background: var(--neutral-100);
-      border-radius: var(--radius-md);
-      padding: var(--space-4);
-      margin: var(--space-4) 0;
-      text-align: left;
-      font-family: 'Courier New', monospace;
-      font-size: 0.8rem;
-      white-space: pre-wrap;
-      max-height: 200px;
-      overflow-y: auto;
-    }
-    .btn {
-      display: block;
-      width: 100%;
-      padding: var(--space-4);
-      border: none;
-      border-radius: var(--radius-md);
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      margin: var(--space-3) 0;
-    }
+    .preview { background: var(--neutral-100); border-radius: var(--radius-md); padding: var(--space-4); margin: var(--space-4) 0; text-align: left; font-family: monospace; font-size: 0.75rem; white-space: pre-wrap; max-height: 220px; overflow-y: auto; }
+    .btn { display: block; width: 100%; padding: var(--space-4); border: none; border-radius: var(--radius-md); font-size: 1rem; font-weight: 600; cursor: pointer; margin: var(--space-3) 0; }
     .btn-connect { background: var(--prime-500); color: white; }
     .btn-connect.connected { background: #27ae60; }
-    .btn-print { background: #C7510F; color: white; }
+    .btn-print { background: var(--prime-500); color: white; }
     .btn-print:disabled { background: var(--neutral-200); cursor: not-allowed; }
-    .btn-secondary { background: var(--neutral-100); color: var(--neutral-700); border: 1px solid var(--neutral-200); }
-    .status { font-size: 0.85rem; margin-top: var(--space-3); min-height: 20px; }
-    .status-connected { color: #27ae60; }
-    .status-disconnected { color: #c0392b; }
-    .error { color: #d32f2f; }
-    .success { color: #2e7d32; }
-    .info { color: var(--prime-500); }
-    .logo {
-      width: 60px; height: 60px; background: var(--prime-500); border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto var(--space-4); color: white; font-size: 1.5rem; font-weight: 700;
-    }
-    .small { font-size: 0.7rem; color: var(--neutral-500); margin-top: var(--space-2); }
+    .btn-secondary { background: var(--neutral-100); border:1px solid var(--neutral-200); color: var(--neutral-700); }
+    .status { font-size: 0.85rem; margin-top: var(--space-3); }
+    .success { color: #27ae60; } .error { color: #d32f2f; } .info { color: var(--prime-500); }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="logo">Q</div>
-    <h1>Qaya Print</h1>
-    
-    <div class="preview" id="preview">Memuat data...</div>
-    
-    <button class="btn btn-connect" id="connectBtn" onclick="connectToPrinter()">
-      Hubungkan Printer
-    </button>
-    <button class="btn btn-print" id="printBtn" onclick="printReceipt()" disabled>
-      Cetak Struk
-    </button>
-    <button class="btn btn-secondary" onclick="window.close()" style="margin-top:0;">
-      Kembali ke Qaya
-    </button>
-    
-    <div class="status status-disconnected" id="status">
-      Printer belum terhubung
-    </div>
-    <div class="small">
-      Klik Hubungkan lalu pilih printer thermal yang terhubung via USB/Bluetooth.
-    </div>
-  </div>
+<div class="card">
+  <h1>Qaya Print</h1>
+  <div class="preview" id="preview">Memuat...</div>
+  <button class="btn btn-connect" id="connectBtn" onclick="connect()">Hubungkan Printer</button>
+  <button class="btn btn-print" id="printBtn" onclick="printReceipt()" disabled>Cetak Struk</button>
+  <button class="btn btn-secondary" onclick="window.close()">Kembali</button>
+  <div class="status" id="status">Printer belum terhubung</div>
+</div>
+<script>
+let receiptData = null, escposCommands = null, port = null, writer = null;
 
-  <script>
-    // Decode data dari URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const encodedData = urlParams.get('d');
-    let receiptData = null;
-    let escposCommands = null;
+const params = new URLSearchParams(location.search);
+const d = params.get('d');
+if (!d) {
+  document.getElementById('preview').textContent = 'Error: Parameter tidak ditemukan.';
+} else {
+  try {
+    const json = atob(decodeURIComponent(d));
+    receiptData = JSON.parse(json);
+    document.getElementById('preview').textContent = buildPreview(receiptData);
+    escposCommands = buildESCOS(receiptData);
+    document.getElementById('status').innerHTML = '<span class="info">Siap cetak — hubungkan printer</span>';
+  } catch (e) {
+    document.getElementById('preview').textContent = 'Error: Data rusak / tidak valid.\n' + e.message;
+    document.getElementById('status').innerHTML = '<span class="error">Gagal membaca data</span>';
+  }
+}
 
-    if (!encodedData) {
-      document.getElementById('preview').textContent = 'Error: Data struk tidak ditemukan.';
-      document.getElementById('status').innerHTML = '<span class="error">Parameter "d" tidak ada</span>';
-    } else {
-      try {
-        const jsonStr = atob(decodeURIComponent(encodedData));
-        receiptData = JSON.parse(jsonStr);
-        document.getElementById('storeName').textContent = receiptData.store_name || 'Toko';
-        document.getElementById('preview').textContent = generatePreview(receiptData);
-        escposCommands = buildESCOSCommands(receiptData);
-        document.getElementById('status').innerHTML = '<span class="info">Siap. Hubungkan printer lalu klik Cetak.</span>';
-      } catch (e) {
-        document.getElementById('preview').textContent = 'Error: Data rusak.';
-        document.getElementById('status').innerHTML = '<span class="error">' + e.message + '</span>';
-      }
-    }
+function buildPreview(d) {
+  let t = (d.header||'') + '\n' + d.store_name + '\n' + d.store_address + '\n';
+  if (d.store_phone) t += 'Telp: ' + d.store_phone + '\n';
+  if (d.outlet_name) t += 'Outlet: ' + d.outlet_name + '\n';
+  t += 'Kasir: ' + (d.cashier||'-') + '\n';
+  if (d.customer) t += 'Cust: ' + d.customer + '\n';
+  t += d.date + '\n' + '-'.repeat(32) + '\n';
+  t += 'Item          Qty   Subtotal\n' + '-'.repeat(32) + '\n';
+  (d.items||[]).forEach(i => t += i.name.substring(0,15).padEnd(15) + ' ' + String(i.qty).padStart(4) + ' ' + ('Rp '+(i.subtotal||0).toLocaleString('id-ID')).padStart(10) + '\n');
+  t += '-'.repeat(32) + '\n';
+  if (d.discount) t += 'Diskon: Rp ' + d.discount.toLocaleString('id-ID') + '\n';
+  t += 'TOTAL: Rp ' + (d.total||0).toLocaleString('id-ID') + '\n';
+  t += 'Bayar: Rp ' + (d.payment_amount||0).toLocaleString('id-ID') + '\n';
+  t += 'Kembali: Rp ' + (d.change_amount||0).toLocaleString('id-ID') + '\n';
+  t += 'Metode: ' + (d.payment_method||'Tunai') + '\n';
+  t += '\n' + (d.footer||'Terima kasih');
+  return t;
+}
 
-    function generatePreview(data) {
-      let t = '';
-      t += (data.header ? data.header + '\n' : '');
-      t += data.store_name + '\n';
-      t += data.store_address + '\n';
-      if (data.store_phone) t += 'Telp: ' + data.store_phone + '\n';
-      t += 'Outlet: ' + (data.outlet_name || '-') + '\n';
-      t += 'Kasir: ' + (data.cashier || '-') + '\n';
-      if (data.customer) t += 'Customer: ' + data.customer + '\n';
-      t += data.date + '\n';
-      t += '-'.repeat(32) + '\n';
-      t += 'Item          Qty   Subtotal\n';
-      t += '-'.repeat(32) + '\n';
-      if (data.items) {
-        data.items.forEach(item => {
-          const name = (item.name || '').substring(0, 15).padEnd(15);
-          const qty = String(item.qty || 1).padStart(4);
-          const sub = 'Rp ' + Number(item.subtotal || 0).toLocaleString('id-ID');
-          t += name + ' ' + qty + ' ' + sub.padStart(10) + '\n';
-        });
-      }
-      t += '-'.repeat(32) + '\n';
-      if (data.discount) t += 'Diskon: Rp ' + data.discount.toLocaleString('id-ID') + '\n';
-      if (data.service_fee) t += 'Biaya Layanan: Rp ' + data.service_fee.toLocaleString('id-ID') + '\n';
-      if (data.tax) t += 'Pajak: Rp ' + data.tax.toLocaleString('id-ID') + '\n';
-      t += 'TOTAL: Rp ' + (data.total || 0).toLocaleString('id-ID') + '\n';
-      t += 'Bayar: Rp ' + (data.payment_amount || 0).toLocaleString('id-ID') + '\n';
-      t += 'Kembali: Rp ' + (data.change_amount || 0).toLocaleString('id-ID') + '\n';
-      t += 'Metode: ' + (data.payment_method || 'Tunai') + '\n';
-      if (data.note) t += 'Catatan: ' + data.note + '\n';
-      t += '\n' + (data.footer || 'Terima kasih telah berbelanja') + '\n';
-      return t;
-    }
+function buildESCOS(d) {
+  const E = new TextEncoder();
+  let c = [0x1B,0x40]; // reset
+  if (d.header) { c.push(0x1B,0x61,0x01); c.push(...E.encode(d.header+'\n')); }
+  c.push(0x1B,0x61,0x01); c.push(0x1B,0x45,0x01); c.push(...E.encode(d.store_name+'\n')); c.push(0x1B,0x45,0x00);
+  if (d.store_address) { c.push(0x1B,0x61,0x00); c.push(...E.encode(d.store_address+'\n')); }
+  if (d.store_phone) c.push(...E.encode('Telp: '+d.store_phone+'\n'));
+  if (d.outlet_name) c.push(...E.encode('Outlet: '+d.outlet_name+'\n'));
+  c.push(...E.encode('Kasir: '+(d.cashier||'Kasir')+'\n'));
+  if (d.customer) c.push(...E.encode('Cust : '+d.customer+'\n'));
+  c.push(...E.encode(d.date+'\n'));
+  c.push(...E.encode('-'.repeat(32)+'\n'));
+  c.push(...E.encode('Item          Qty   Subtotal\n'));
+  c.push(...E.encode('-'.repeat(32)+'\n'));
+  (d.items||[]).forEach(i => {
+    const line = i.name.substring(0,15).padEnd(15) + ' ' + String(i.qty).padStart(4) + ' ' + ('Rp '+(i.subtotal||0).toLocaleString('id-ID')).padStart(10) + '\n';
+    c.push(...E.encode(line));
+  });
+  c.push(...E.encode('-'.repeat(32)+'\n'));
+  c.push(0x1B,0x61,0x02);
+  if (d.discount) c.push(...E.encode('Diskon: Rp '+d.discount.toLocaleString('id-ID')+'\n'));
+  c.push(0x1B,0x45,0x01); c.push(...E.encode('TOTAL: Rp '+(d.total||0).toLocaleString('id-ID')+'\n')); c.push(0x1B,0x45,0x00);
+  c.push(...E.encode('Bayar: Rp '+(d.payment_amount||0).toLocaleString('id-ID')+'\n'));
+  c.push(...E.encode('Kembali: Rp '+(d.change_amount||0).toLocaleString('id-ID')+'\n'));
+  c.push(0x1B,0x61,0x01); c.push(...E.encode('Metode: '+(d.payment_method||'Tunai')+'\n'));
+  c.push(0x0A); c.push(...E.encode((d.footer||'Terima kasih')+'\n')); c.push(0x0A,0x0A);
+  c.push(0x1D,0x56,0x41,0x00);
+  return new Uint8Array(c);
+}
 
-    function buildESCOSCommands(data) {
-      const encoder = new TextEncoder();
-      let cmd = [];
-      cmd.push(0x1B, 0x40); // ESC @
+async function connect() {
+  if (!('serial' in navigator)) { document.getElementById('status').innerHTML='<span class="error">Web Serial tidak didukung</span>'; return; }
+  try {
+    port = await navigator.serial.requestPort();
+    await port.open({ baudRate: 9600 });
+    writer = port.writable.getWriter();
+    document.getElementById('connectBtn').textContent = '✓ Printer Terhubung';
+    document.getElementById('connectBtn').classList.add('connected');
+    document.getElementById('printBtn').disabled = false;
+    document.getElementById('status').innerHTML = '<span class="success">Printer siap</span>';
+  } catch (e) {
+    document.getElementById('status').innerHTML = '<span class="error">'+e.message+'</span>';
+  }
+}
 
-      // Header
-      if (data.header) {
-        cmd.push(0x1B, 0x61, 0x01); // center
-        cmd = cmd.concat(Array.from(encoder.encode(data.header + '\n')));
-      }
-
-      // Nama toko (bold, center)
-      cmd.push(0x1B, 0x61, 0x01); // center
-      cmd.push(0x1B, 0x45, 0x01); // bold on
-      cmd = cmd.concat(Array.from(encoder.encode(data.store_name + '\n')));
-      cmd.push(0x1B, 0x45, 0x00); // bold off
-
-      // Info toko
-      if (data.store_address) cmd = cmd.concat(Array.from(encoder.encode(data.store_address + '\n')));
-      if (data.store_phone) cmd = cmd.concat(Array.from(encoder.encode('Telp: ' + data.store_phone + '\n')));
-
-      // Outlet & Kasir
-      cmd.push(0x1B, 0x61, 0x00); // left align
-      if (data.outlet_name) cmd = cmd.concat(Array.from(encoder.encode('Outlet: ' + data.outlet_name + '\n')));
-      cmd = cmd.concat(Array.from(encoder.encode('Kasir: ' + (data.cashier || 'Kasir') + '\n')));
-      if (data.customer) cmd = cmd.concat(Array.from(encoder.encode('Cust : ' + data.customer + '\n')));
-
-      // Tanggal
-      cmd = cmd.concat(Array.from(encoder.encode(data.date + '\n')));
-
-      // Divider
-      cmd = cmd.concat(Array.from(encoder.encode('-'.repeat(32) + '\n')));
-
-      // Header kolom
-      cmd = cmd.concat(Array.from(encoder.encode('Item          Qty   Subtotal\n')));
-      cmd = cmd.concat(Array.from(encoder.encode('-'.repeat(32) + '\n')));
-
-      // Items
-      if (data.items) {
-        data.items.forEach(item => {
-          const name = (item.name || '').substring(0, 15).padEnd(15);
-          const qty = String(item.qty || 1).padStart(4);
-          const sub = 'Rp ' + Number(item.subtotal || 0).toLocaleString('id-ID');
-          cmd = cmd.concat(Array.from(encoder.encode(name + ' ' + qty + ' ' + sub.padStart(10) + '\n')));
-        });
-      }
-
-      // Total
-      cmd = cmd.concat(Array.from(encoder.encode('-'.repeat(32) + '\n')));
-      cmd.push(0x1B, 0x61, 0x02); // right align
-      if (data.discount) cmd = cmd.concat(Array.from(encoder.encode('Diskon: Rp ' + data.discount.toLocaleString('id-ID') + '\n')));
-      if (data.service_fee) cmd = cmd.concat(Array.from(encoder.encode('Biaya Layanan: Rp ' + data.service_fee.toLocaleString('id-ID') + '\n')));
-      if (data.tax) cmd = cmd.concat(Array.from(encoder.encode('Pajak: Rp ' + data.tax.toLocaleString('id-ID') + '\n')));
-      cmd.push(0x1B, 0x45, 0x01); // bold on
-      cmd = cmd.concat(Array.from(encoder.encode('TOTAL: Rp ' + (data.total || 0).toLocaleString('id-ID') + '\n')));
-      cmd.push(0x1B, 0x45, 0x00);
-      cmd = cmd.concat(Array.from(encoder.encode('Bayar: Rp ' + (data.payment_amount || 0).toLocaleString('id-ID') + '\n')));
-      cmd = cmd.concat(Array.from(encoder.encode('Kembali: Rp ' + (data.change_amount || 0).toLocaleString('id-ID') + '\n')));
-      cmd.push(0x1B, 0x61, 0x01); // center
-      cmd = cmd.concat(Array.from(encoder.encode('Metode: ' + (data.payment_method || 'Tunai') + '\n')));
-
-      if (data.note) cmd = cmd.concat(Array.from(encoder.encode('Catatan: ' + data.note + '\n')));
-
-      // Footer
-      cmd.push(0x1B, 0x61, 0x01); // center
-      cmd.push(0x0A);
-      cmd = cmd.concat(Array.from(encoder.encode((data.footer || 'Terima kasih telah berbelanja') + '\n')));
-      cmd.push(0x0A, 0x0A);
-
-      // Cut
-      cmd.push(0x1D, 0x56, 0x41, 0x00);
-
-      return new Uint8Array(cmd);
-    }
-
-    // ========== WEB SERIAL API + LOCALSTORAGE ==========
-    let port = null;
-    let writer = null;
-    const STORAGE_KEY = 'qaya-print-port-path';
-
-    // Coba sambungkan otomatis jika port tersimpan
-    async function tryReconnect() {
-      const savedPath = localStorage.getItem(STORAGE_KEY);
-      if (!savedPath) return false;
-      try {
-        const availablePorts = await navigator.serial.getPorts();
-        const found = availablePorts.find(p => {
-          try {
-            return p.getInfo().usbProductId || p.getInfo().serialNumber; // bandingkan info
-          } catch(e) { return false; }
-        });
-        if (found) {
-          port = found;
-          await port.open({ baudRate: 9600 });
-          writer = port.writable.getWriter();
-          updateUIForConnection(true);
-          return true;
-        }
-      } catch (e) {
-        console.log('Reconnect failed:', e);
-      }
-      return false;
-    }
-
-    async function connectToPrinter() {
-      const btn = document.getElementById('connectBtn');
-      const status = document.getElementById('status');
-      
-      if (!('serial' in navigator)) {
-        status.innerHTML = '<span class="error">Web Serial tidak didukung. Gunakan Chrome/Edge.</span>';
-        return;
-      }
-
-      try {
-        btn.textContent = 'Menghubungkan...';
-        btn.disabled = true;
-
-        if (port && writer) {
-          // Sudah terhubung, putuskan dulu
-          try { await writer.close(); } catch (e) {}
-          try { await port.close(); } catch (e) {}
-          port = null;
-          writer = null;
-        }
-
-        port = await navigator.serial.requestPort();
-        await port.open({ baudRate: 9600 });
-        writer = port.writable.getWriter();
-
-        // Simpan informasi port (hanya untuk diingat, tidak bisa reconnect otomatis tanpa user gesture)
-        const info = port.getInfo();
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify({
-            usbVendorId: info.usbVendorId,
-            usbProductId: info.usbProductId
-          }));
-        } catch (e) {}
-
-        updateUIForConnection(true);
-        status.innerHTML = '<span class="status-connected">Printer siap</span>';
-      } catch (err) {
-        btn.textContent = 'Hubungkan Printer';
-        btn.disabled = false;
-        if (err.name === 'NotFoundError') {
-          status.innerHTML = '<span class="status-disconnected">Tidak ada printer dipilih</span>';
-        } else {
-          status.innerHTML = '<span class="error">Gagal: ' + err.message + '</span>';
-        }
-        updateUIForConnection(false);
-      }
-    }
-
-    function updateUIForConnection(connected) {
-      const connectBtn = document.getElementById('connectBtn');
-      const printBtn = document.getElementById('printBtn');
-      const status = document.getElementById('status');
-      if (connected) {
-        connectBtn.textContent = '✓ Printer Terhubung';
-        connectBtn.classList.add('connected');
-        printBtn.disabled = false;
-      } else {
-        connectBtn.textContent = 'Hubungkan Printer';
-        connectBtn.classList.remove('connected');
-        printBtn.disabled = true;
-      }
-    }
-
-    async function printReceipt() {
-      const btn = document.getElementById('printBtn');
-      const status = document.getElementById('status');
-      
-      if (!escposCommands) {
-        status.innerHTML = '<span class="error">Tidak ada data untuk dicetak</span>';
-        return;
-      }
-      if (!writer) {
-        status.innerHTML = '<span class="error">Hubungkan printer terlebih dahulu</span>';
-        return;
-      }
-
-      try {
-        btn.disabled = true;
-        btn.textContent = 'Mencetak...';
-        status.innerHTML = '<span class="info">Mengirim data...</span>';
-        await writer.write(escposCommands);
-        status.innerHTML = '<span class="success">Struk berhasil dicetak!</span>';
-        btn.textContent = 'Cetak Ulang';
-        btn.disabled = false;
-      } catch (err) {
-        status.innerHTML = '<span class="error">Gagal: ' + err.message + '</span>';
-        btn.textContent = 'Coba Lagi';
-        btn.disabled = false;
-        writer = null;
-        port = null;
-        updateUIForConnection(false);
-      }
-    }
-
-    // Attempt reconnect on load (butuh user gesture untuk request serial, jadi hanya cek daftar)
-    window.addEventListener('load', async () => {
-      if ('serial' in navigator) {
-        // Jika ada port yang sudah diizinkan, coba gunakan langsung tanpa request baru
-        const ports = await navigator.serial.getPorts();
-        if (ports.length > 0) {
-          // Coba buka port pertama yang tersedia
-          try {
-            port = ports[0];
-            await port.open({ baudRate: 9600 });
-            writer = port.writable.getWriter();
-            updateUIForConnection(true);
-            document.getElementById('status').innerHTML = '<span class="status-connected">Tersambung otomatis ke printer.</span>';
-          } catch (e) {
-            // Port tidak tersedia
-            console.log('Auto-connect gagal, user harus klik Hubungkan.');
-          }
-        }
-      }
-    });
-
-    window.addEventListener('beforeunload', async () => {
-      if (writer) {
-        try { await writer.close(); } catch (e) {}
-      }
-      if (port) {
-        try { await port.close(); } catch (e) {}
-      }
-    });
-  </script>
+async function printReceipt() {
+  if (!writer) { document.getElementById('status').innerHTML='<span class="error">Hubungkan printer dulu</span>'; return; }
+  try {
+    await writer.write(escposCommands);
+    document.getElementById('status').innerHTML = '<span class="success">Tercetak!</span>';
+  } catch (e) {
+    document.getElementById('status').innerHTML = '<span class="error">'+e.message+'</span>';
+    writer = null; port = null;
+  }
+}
+</script>
 </body>
 </html>
