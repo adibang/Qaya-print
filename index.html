@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Qaya Print</title>
+  <title>Qaya Print - Cetak Struk</title>
   <style>
     :root { --prime-500: #C7510F; --neutral-50: #FAFAFA; --neutral-100: #F5F5F5; --neutral-200: #E5E5E5; --neutral-500: #737373; --neutral-700: #404040; --radius-md: 8px; --radius-lg: 12px; --shadow-md: 0 4px 12px rgba(0,0,0,0.08); --space-3: 12px; --space-4: 16px; --space-6: 24px; }
     * { margin:0; padding:0; box-sizing:border-box; }
@@ -33,6 +33,7 @@
 <script>
 let receiptData = null, escposCommands = null, port = null, writer = null;
 
+// ========== Decode data ==========
 const params = new URLSearchParams(location.search);
 const d = params.get('d');
 if (!d) {
@@ -99,31 +100,101 @@ function buildESCOS(d) {
   return new Uint8Array(c);
 }
 
+// ========== UI Helper ==========
+function updateUIForConnection(connected) {
+  const connectBtn = document.getElementById('connectBtn');
+  const printBtn = document.getElementById('printBtn');
+  if (connected) {
+    connectBtn.textContent = '✓ Printer Terhubung';
+    connectBtn.classList.add('connected');
+    printBtn.disabled = false;
+  } else {
+    connectBtn.textContent = 'Hubungkan Printer';
+    connectBtn.classList.remove('connected');
+    printBtn.disabled = true;
+  }
+}
+
+// ========== Auto-reconnect saat halaman dimuat ==========
+async function tryAutoReconnect() {
+  if (!('serial' in navigator)) return false;
+  try {
+    const ports = await navigator.serial.getPorts();
+    if (ports.length === 0) return false;
+    // Coba buka port pertama yang tersedia
+    port = ports[0];
+    await port.open({ baudRate: 9600 });
+    writer = port.writable.getWriter();
+    updateUIForConnection(true);
+    document.getElementById('status').innerHTML = '<span class="success">Tersambung otomatis ke printer.</span>';
+    return true;
+  } catch (e) {
+    console.log('Auto-reconnect gagal:', e.message);
+    // Reset jika gagal
+    port = null;
+    writer = null;
+    return false;
+  }
+}
+
+// Panggil auto-reconnect saat halaman dimuat
+window.addEventListener('load', async () => {
+  const connected = await tryAutoReconnect();
+  if (!connected) {
+    document.getElementById('status').innerHTML = '<span class="info">Printer belum terhubung. Klik Hubungkan.</span>';
+  }
+});
+
+// ========== Connect manual ==========
 async function connect() {
-  if (!('serial' in navigator)) { document.getElementById('status').innerHTML='<span class="error">Web Serial tidak didukung</span>'; return; }
+  if (!('serial' in navigator)) {
+    document.getElementById('status').innerHTML = '<span class="error">Web Serial tidak didukung</span>';
+    return;
+  }
+  // Jika sudah terhubung, putuskan dulu
+  if (port && writer) {
+    try { await writer.close(); } catch (e) {}
+    try { await port.close(); } catch (e) {}
+    port = null;
+    writer = null;
+  }
   try {
     port = await navigator.serial.requestPort();
     await port.open({ baudRate: 9600 });
     writer = port.writable.getWriter();
-    document.getElementById('connectBtn').textContent = '✓ Printer Terhubung';
-    document.getElementById('connectBtn').classList.add('connected');
-    document.getElementById('printBtn').disabled = false;
-    document.getElementById('status').innerHTML = '<span class="success">Printer siap</span>';
+    updateUIForConnection(true);
+    document.getElementById('status').innerHTML = '<span class="success">Printer siap digunakan</span>';
   } catch (e) {
-    document.getElementById('status').innerHTML = '<span class="error">'+e.message+'</span>';
+    if (e.name !== 'NotFoundError') {
+      document.getElementById('status').innerHTML = '<span class="error">' + e.message + '</span>';
+    }
+    updateUIForConnection(false);
   }
 }
 
+// ========== Print ==========
 async function printReceipt() {
-  if (!writer) { document.getElementById('status').innerHTML='<span class="error">Hubungkan printer dulu</span>'; return; }
+  if (!writer) {
+    document.getElementById('status').innerHTML = '<span class="error">Hubungkan printer terlebih dahulu</span>';
+    return;
+  }
   try {
     await writer.write(escposCommands);
-    document.getElementById('status').innerHTML = '<span class="success">Tercetak!</span>';
+    document.getElementById('status').innerHTML = '<span class="success">Struk berhasil dicetak!</span>';
   } catch (e) {
-    document.getElementById('status').innerHTML = '<span class="error">'+e.message+'</span>';
-    writer = null; port = null;
+    document.getElementById('status').innerHTML = '<span class="error">Gagal mencetak: ' + e.message + '</span>';
+    // Reset koneksi agar bisa coba lagi
+    writer = null;
+    port = null;
+    updateUIForConnection(false);
   }
 }
+
+// Bersihkan saat halaman ditutup
+window.addEventListener('beforeunload', async () => {
+  if (writer) try { await writer.close(); } catch (e) {}
+  if (port) try { await port.close(); } catch (e) {}
+});
 </script>
 </body>
 </html>
