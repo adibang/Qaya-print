@@ -61,6 +61,7 @@ function buildPreview(d) {
   t += 'Item          Qty   Subtotal\n' + '-'.repeat(32) + '\n';
   (d.items||[]).forEach(i => t += i.name.substring(0,15).padEnd(15) + ' ' + String(i.qty).padStart(4) + ' ' + ('Rp '+(i.subtotal||0).toLocaleString('id-ID')).padStart(10) + '\n');
   t += '-'.repeat(32) + '\n';
+  if (d.bags_fee) t += 'Bags : Rp ' + d.bags_fee.toLocaleString('id-ID') + '\n';
   if (d.discount) t += 'Diskon: Rp ' + d.discount.toLocaleString('id-ID') + '\n';
   t += 'TOTAL: Rp ' + (d.total||0).toLocaleString('id-ID') + '\n';
   t += 'Bayar: Rp ' + (d.payment_amount||0).toLocaleString('id-ID') + '\n';
@@ -90,6 +91,7 @@ function buildESCOS(d) {
   });
   c.push(...E.encode('-'.repeat(32)+'\n'));
   c.push(0x1B,0x61,0x02);
+  if (d.bags_fee) c.push(...E.encode('Bags : Rp ' + d.bags_fee.toLocaleString('id-ID') + '\n'));
   if (d.discount) c.push(...E.encode('Diskon: Rp '+d.discount.toLocaleString('id-ID')+'\n'));
   c.push(0x1B,0x45,0x01); c.push(...E.encode('TOTAL: Rp '+(d.total||0).toLocaleString('id-ID')+'\n')); c.push(0x1B,0x45,0x00);
   c.push(...E.encode('Bayar: Rp '+(d.payment_amount||0).toLocaleString('id-ID')+'\n'));
